@@ -1,3 +1,4 @@
+# Create project
 Clone the repo here https://github.com/dockersamples/example-voting-app.git and the follow the instructions here https://github.com/dockersamples/example-voting-app?tab=readme-ov-file tu run it locally
 
 - the voting app is written in python
@@ -20,6 +21,7 @@ AZ devops selects alphabetically a default branch, make sure to switch to main. 
 
 ![alt text](images/default_brnch.PNG)
 
+# Create a resource group
 First let's create a resource group
 Let's head to the azure portal > under `Azure Services` select `Resource Groups` > `create`
 Let's call our resource group `azurecicd`, then `Review + create` > `create`
@@ -37,6 +39,7 @@ Now let's create a new container registry called `labazurecicd`
 `Review + create` > `create`
 After a while the registry will be created.
 
+# Create first pipeline - result
 Now let's create the pipelines. We need to create 3, because we have 3 microservices.
 Let's head to the azure devops page > `voting-app` > `Pipelines` > `Create Pipeline`. Under `Connect` we select `Azure Repos Git`
 
@@ -176,6 +179,7 @@ The jobs should not run as expected bevause we encounter an error, due to non-ex
 
 ![alt text](images/ci_no_agent_pool_error.PNG)
 
+# Create and Setup Agent Pool
 Now let's create our agent. Let's head to the azure portal and search for `Virtual machines` > `create` > `Azure virtual machine`:
 - `azurecicd` as resource group
 - `azureagent` as virtual machine name
@@ -246,8 +250,10 @@ Now that the agent pool is configured, to run it execute:
 ```
 ![alt text](images/agent_pool_console_config.PNG)
 To see if our agent is really running and active, head to `azure devops` > `Settings` > `Agent pools` > `azureagent` > `Agents`. Our agent should be `Online`.
+
 ![alt text](images/check_agent_pool_status.PNG)
 
+# Run first job - result
 Now that we have a running agent, if we head back to azure devops > ``voting-app`` > ``Pipelines`` > ``voting-app``, and run again the failed pipeline, it should now pass.
 
 ![alt text](images/1st_result_job_passed.PNG)
@@ -256,5 +262,10 @@ In the agent pool console we should also have this output
 
 ![alt text](images/proof_1st_result_job.PNG)
 
+Now our result pipeline can be triggered automatically as soon as a change is made to a file in the result folder.
 
-We can to create a docker image, then push it to the azure container registry
+# Create second pipeline - vote
+Repeat step in chapter [Create first pipeline - result](#create-first-pipeline---result)
+
+# Create second pipeline - worker
+Repeat step in chapter [Create first pipeline - result](#create-first-pipeline---result)
