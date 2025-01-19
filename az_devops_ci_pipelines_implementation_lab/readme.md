@@ -266,6 +266,130 @@ Now our result pipeline can be triggered automatically as soon as a change is ma
 
 # Create second pipeline - vote
 Repeat step in chapter [Create first pipeline - result](#create-first-pipeline---result)
+`azure-pipelines-vote.yml`
+```yaml
+# Docker
+# Build and push an image to Azure Container Registry
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+  paths:
+    include:
+      - vote/*
+
+resources:
+- repo: self
+
+variables:
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: 'd92029ff-674e-4fff-b984-d7160262933f'
+  imageRepository: 'voteapp'
+  containerRegistry: 'labazurecicd.azurecr.io'
+  dockerfilePath: '$(Build.SourcesDirectory)/vote/Dockerfile'
+  tag: '$(Build.BuildId)'
+
+# Agent VM image name
+pool:
+ name: 'azureagent'
+
+stages:
+- stage: Build
+  displayName: Build
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+    - task: Docker@2
+      displayName: Build
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: '$(imageRepository)'
+        command: 'build'
+        Dockerfile: 'vote/Dockerfile'
+        tags: '$(tag)'
+- stage: Push
+  displayName: Push
+  jobs:
+  - job: Push
+    displayName: Push
+    steps:
+    - task: Docker@2
+      displayName: Push
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: '$(imageRepository)'
+        command: 'push'
+        tags: '$(tag)'
+```
 
 # Create second pipeline - worker
 Repeat step in chapter [Create first pipeline - result](#create-first-pipeline---result)
+`azure-pipelines-worker.yml`
+```yaml
+# Docker
+# Build and push an image to Azure Container Registry
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+ paths:
+   include:
+     - worker/*
+
+resources:
+- repo: self
+
+variables:
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: '73a79d10-c49d-4ede-8e43-e0ac2077bb03'
+  imageRepository: 'workerapp'
+  containerRegistry: 'labazurecicd.azurecr.io'
+  dockerfilePath: '$(Build.SourcesDirectory)/worker/Dockerfile'
+  tag: '$(Build.BuildId)'
+
+pool:
+  name: 'azureagent'
+
+stages:
+- stage: Build
+  displayName: Build
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+    - task: Docker@2
+      displayName: Build
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: '$(imageRepository)'
+        command: 'build'
+        Dockerfile: 'worker/Dockerfile'
+        tags: '$(tag)'
+- stage: Push
+  displayName: Push
+  jobs:
+  - job: Push
+    displayName: Push
+    steps:
+    - task: Docker@2
+      displayName: Push
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: '$(imageRepository)'
+        command: 'push'
+        tags: '$(tag)'
+```
+
+You might get following erros when running the worker pipeline
+```shell
+##[error]DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+##[error]            Install the buildx component to build images with BuildKit:
+##[error]            https://docs.docker.com/go/buildx/
+##[error]failed to parse platform : "" is an invalid component of "": platform specifier component must match "^[A-Za-z0-9_-]+$": invalid argument
+##[error]The process '/usr/bin/docker' failed with exit code 1
+```
+
+To solve it, replace in worker/Dockerfile the variables: 
+- line 11: $``{BUILDPLATFORM}`` with `linux`
+- line 19 and 22: delete `-a $TARGETARCH`
+
+To checkout the built containers, checkout `azure portal` > `Conainers Registries` > `labazurecicd` > `Services` > `Repositories`
