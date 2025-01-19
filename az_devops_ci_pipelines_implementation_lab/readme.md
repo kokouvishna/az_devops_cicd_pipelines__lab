@@ -393,3 +393,5 @@ To solve it, replace in worker/Dockerfile the variables:
 - line 19 and 22: delete `-a $TARGETARCH`
 
 To checkout the built containers, checkout `azure portal` > `Conainers Registries` > `labazurecicd` > `Services` > `Repositories`
+
+![alt text](images/container_reg.PNG)
