@@ -7,7 +7,7 @@ Clone the repo here https://github.com/dockersamples/example-voting-app.git and 
 
 First we create a new project create. On the azure portal under `services` i look for `My Azure DevOps Organizations`.
 On the Azure DevOps, select `new project` in order to create a new one.
-![alt text](https://github.com/kokouvishna/az_devops_cicd_pipelines__lab/tree/main/az_devops_ci_pipelines_implementation_lab/images/new_prjct.PNG)
+![screenshot](/images/new_prjct.PNG)
 
 Now we need to import the business app into the new created project. We head to the app github page and copy the HTTPS url. Now we head back to our project on azure devops -> Repos -> Import a repository; and paste the link in the `Clone URL *` field, then import.
 ![alt text](az_devops_ci_pipelines_implementation_lab/images/import_repo.PNG)
