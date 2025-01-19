@@ -223,6 +223,7 @@ To see if our agent is really running and active, head to `azure devops` > `Sett
 ![alt text](images/check_agent_pool_status.PNG)
 
 Now that we have a running agent, if we head back to azure devops > ``voting-app`` > ``Pipelines`` > ``voting-app``, and run again the failed pipeline, it should now pass.
+
 ![alt text](images/1st_result_job_passed.PNG)
 
 In the agent pool console we should also have this output
