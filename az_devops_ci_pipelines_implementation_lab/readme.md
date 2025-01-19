@@ -10,7 +10,7 @@ On the Azure DevOps, select `new project` in order to create a new one.
 ![screenshot](images/new_prjct.PNG?raw=true)
 
 Now we need to import the business app into the new created project. We head to the app github page and copy the HTTPS url. Now we head back to our project on azure devops -> Repos -> Import a repository; and paste the link in the `Clone URL *` field, then import.
-![alt text](az_devops_ci_pipelines_implementation_lab/images/import_repo.PNG)
+![screenshot](az_devops_ci_pipelines_implementation_lab/images/import_repo.PNG)
 After a while the import will be successful.
 
 AZ devops selects alphabetically a default branch, make sure to switch to main. Under `Branches`, star `main` or use the 3 dots to set it as default branch.
