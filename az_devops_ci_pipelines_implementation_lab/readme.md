@@ -237,7 +237,9 @@ wget https://vstsagentpackage.azureedge.net/agent/4.248.0/vsts-agent-linux-x64-4
 ```
 Server URL: https://dev.azure.com/{your-organization}
 Your organization is not the project name, but the name shown on your azure devops platform.
-Your also also a personal access tocken (PAT). Go to azure devops > `User settings`  > `Personal Access Tokens` > `New Token` > `Create`
+
+## Create a personal access token (PAT)
+Your also need a personal access tocken (PAT). Go to azure devops > `User settings`  > `Personal Access Tokens` > `New Token` > `Create`
 
 ![alt text](images/create_pat.PNG)
 

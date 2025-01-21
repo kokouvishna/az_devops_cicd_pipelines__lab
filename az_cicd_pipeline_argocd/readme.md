@@ -34,7 +34,7 @@ We suppose azure CLI is already installed and configured on your system. Enter f
 az login
 ```
 ```shell
-az aks get-credentials --name azuredevops --overwrite-existing --resource-group azurecicdt
+az aks get-credentials --name azuredevops --overwrite-existing --resource-group azurecicd
 ```
 You should then get the output ```Merged azuredevops as current context in <users>/.kube/config```
 
@@ -136,5 +136,61 @@ Now let's get the node external IP:
 ```shell
 kubectl get nodes -o wide
 ```
+Output:
+```shell
+NAME                                STATUS   ROLES   AGE   VERSION   INTERNAL-IP   EXTERNAL-IP      OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+aks-agentpool-18580224-vmss000002   Ready    agent   68m   v1.28.0   10.224.0.4    52.247.235.249   Ubuntu 22.04.5 LTS   5.15.0-1075-azure   containerd://1.7.23-1
+```
+Whereas the `external ip address` is `52.247.235.249`.
+Now let's try to access the argocd UI on a webbrowser as follow `<ip address>:<http node port>`, `52.247.235.249:31796`.
+We won't be able to access to page, because we didn't opened the port in the network security group.
+Let's open the port. On the azure portal search for `Virtual machine scale sets`, click on the node pool `aks-agentpool-<ID>-vmss` > `Instances` > `aks-agentpool-<ID>-vmss_<NUMBER>`
+
+![screenshot](images/vmss_instances.PNG)
+
+Go to `Networking` > `Network settings` > `Create port rule` > `inbound port rule`
+
+![screenshot](images/inbound_port_rule.PNG)
+
+Under `Destination port ranges` replace the default port by the one of the `argocd-server`.
+
+![screenshot](images/vmss_instances.PNG)
+
+![screenshot](images/add_inbound_rule.PNG)
+
+Go back to the webbrowser, and refresh the page, now argocd should be accessible
+
+![screenshot](images/argocd.PNG)
+
+Enter the user `admin` and the base64 decoded password to sign in
+
+![screenshot](images/argocd_logged_in.PNG)
+
+Now let's connect argocd which is on our kubernetes cluster with the business app on azure repository.
+We need either credentials or PAT to connect both of them. [Here](../az_devops_ci_pipelines_implementation_lab/readme.md#create-a-personal-access-toke-pat) we already learn how to create a PAT.
+Let's go back to the argocd page > `Settings` > `Repositories` > `Connect repo` > 
+- Under `repository url`, copy paste the repository url. To find the url, head to `azure devops` > `Repos` > `Clone` > copy the `https` url.
+Now replace your username before `@` with your PAT. When you're done click on `Connect`.
+
+![screenshot](images/argocd_connect_repo.PNG)
+
+Now the `connection status` should be `Successful`.
+We are now done with connecting argocd to the repo.
+
+Now let's connect argocd and deploy to the kubernetes cluster.
+`argocd page` > `Applications` > `New app` 
+
+![screenshot](images/argocd_app_settings_1.PNG)
+
+![screenshot](images/argocd_app_settings_2.PNG)
+
+Finish with `Create`.
+
+![screenshot](images/argocd_config_done.PNG)
+
+Now argocd is configured. It is picking up all the manifests from the ``k8s-specifications`` folder and deploying it to the kubernetes kluster.
+Now if there is any change to any of the manifests argocd will deploy it to the cluster.
+
 
 ## Write the update shell script
+Let's add a new stage (update stage) for example to the vote-service pipeline. This update should pick up new images from the ACR and update it to the repository.
