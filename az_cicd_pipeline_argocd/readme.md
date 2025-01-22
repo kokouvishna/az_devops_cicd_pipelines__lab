@@ -192,5 +192,100 @@ Now argocd is configured. It is picking up all the manifests from the ``k8s-spec
 Now if there is any change to any of the manifests argocd will deploy it to the cluster.
 
 
+
 ## Write the update shell script
 Let's add a new stage (update stage) for example to the vote-service pipeline. This update should pick up new images from the ACR and update it to the repository.
+
+In `azure portal` > `Containers registries` > `labazurecicd` > `Repositories`, we have our microservices, that we wrote the pipelines for.
+And they all have an tag number. And if you click for example on the `resultapp` tag, under `Manifest` you will be presented with 
+a docker pull command `docker pull <azure-devops-domain-name>.azurecr.io/<repo-name>:<build-numider>`.
+The format of that docker command should exactly be used by `updateK8sManifests.sh` when modifying the .yaml manifests under the `k8s-specifications` folder.
+
+### Notice: Keep the agent pool `azureagent` running we will be running the pipelines
+
+Go back to the azure repo, create a new folder `scripts`, and a new file [updateK8sManifests.sh](scripts/updateK8sManifests.sh) > `Commit`.
+
+Let's add the update stage for instance to the vote pipeline yaml. Add this stage:
+`azure-pipelines-vote.yml`
+```yaml
+- stage: Update
+  displayName: Update
+  jobs:
+  - job: Update
+    displayName: Update
+    steps:
+    - task: ShellScript@2
+      inputs:
+        scriptPath: 'scripts/updateK8sManifests.sh'
+        args: 'vote $(imageRepository) $(tag)'
+```
+
+Then `settings` > in `Script Path` add the path to where we added `updateK8sManifests.sh` (`scripts/updateK8sManifests.sh`). Under `Arguments`, add `vote $(imageRepository) $(tag)`. 
+Arguments used:
+- `$1`: microservice name (vote|result|worker|db|redis)
+- `$2`: repository name in ACR (resultapp|voteapp|workerapp)
+- `$3`: tag id
+Save and run the vote pipeline. All jobs should run and complete with the result succeeded in the agent pool console. When you check the `vote-deployment.yaml` under `k8s-specifications` you'll notice the value of the key `image`  has changed. And now you see something like this `- image: labazurecicd/voteapp:44`.
+
+Let's not forget argocd is constantly also watching for the changes in the repo. Now it'll try to redeploy the manifests in our cluster. Let's change the argocd sync time from the default 3 minutes to 10 seconds, so that we don't have to wait that long. On your system console run:
+```shell
+kubectl edit cm argocd-cm -n argocd
+```
+Then edit in adding following at the end of the file and save:
+```shell
+data:
+  timeout.reconciliation: 10s
+```
+
+## ImagePullSecrets - Correctly pull from a private repository
+If you run `kubectl get pods` you witness some pods are labelled with hte status `ImagePullBackOff` or `ErrImagePull`, because we are pulling images from a private registry. Using the concept of `ImagePullSecrets` we can pull images from private repositories.
+`Containers Registries` > `Container Registrie` > `labazurecicd` > `Settings` > `Access keys` > enable `Admin user`. We will be needing the username and password this page. Go back to the console and run:
+```shell
+data:
+kubectl create secret docker-registry <secret-name> \
+    --namespace <namespace> \
+    --docker-server=<container-registry-name>.azurecr.io \
+    --docker-username=<service-principal-ID> \
+    --docker-password=<service-principal-password>
+```
+- `<secret-name>`: put anything. We use `acr-secret`
+- `<namespace>`: `default`
+- ``<container-registry-name>``: in our case `labazurecicd`
+- `<service-principal-ID>`: previous username
+- `<service-principal-password>`: previous password
+
+Let's go back to the `vote-deployment.yaml` and add following at the end of the file, then commit the change:
+```shell
+ImagePullSecrets:
+      - name: acr-secret
+```
+`acr-secret` is the secret name we choose to use earlier. The file should now look like this:
+`vote-deployment.yaml`:
+```shell
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: vote
+  name: vote
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vote
+  template:
+    metadata:
+      labels:
+        app: vote
+    spec:
+      containers:
+      - image: labazurecicd/voteapp:44
+        name: vote
+        ports:
+        - containerPort: 80
+          name: vote
+      ImagePullSecrets:
+      - name: acr-secret
+```
+
+To verify the ci/cd just make a minor change to a file in the `vote` folder.
