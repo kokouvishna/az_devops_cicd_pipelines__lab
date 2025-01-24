@@ -129,9 +129,9 @@ kubectl edit svc argocd-server -n argocd
 Change `type: ClusterIP` to `type: NopePort` and save the file.
 If we run again `kubectl get svc -n argocd`, `argocd-server` should now have the type `NodePort`
 ```shell
-argocd-server                             NodePort    10.111.248.83    <none>        80:32238/TCP,443:31727/TCP   39m
+argocd-server                             NodePort    10.111.248.83    <none>        80:32238/TCP,443:31796/TCP   39m
 ```
-Whereas the (http) node port is `32238`. 
+Whereas the (http) node port is `31796`. 
 Now let's get the node external IP:
 ```shell
 kubectl get nodes -o wide
@@ -243,13 +243,11 @@ If you run `kubectl get pods` you witness some pods are labelled with hte status
 ```shell
 data:
 kubectl create secret docker-registry <secret-name> \
-    --namespace <namespace> \
     --docker-server=<container-registry-name>.azurecr.io \
     --docker-username=<service-principal-ID> \
     --docker-password=<service-principal-password>
 ```
 - `<secret-name>`: put anything. We use `acr-secret`
-- `<namespace>`: `default`
 - ``<container-registry-name>``: in our case `labazurecicd`
 - `<service-principal-ID>`: previous username
 - `<service-principal-password>`: previous password
@@ -289,3 +287,27 @@ spec:
 ```
 
 To verify the ci/cd just make a minor change to a file in the `vote` folder.
+Our ci/cd pipeline will trigger automatically, after the `build` and `push` pipelines jobs are done, 
+the `votingapp` will also be updated in the ACR with the new build id. 
+The next job to run is the `update` one, after it's done, argocd will pick up the new change 
+and deploy to our kubernetes cluster.
+You can also run the following to see exactly what image ig is being deployed:
+```shell
+kubectl get deploy vote -o yaml
+```
+In the yaml output you should see:
+```shell
+...
+spec:
+  containers:
+  - image: <ACR-name>.azurecr.io/votingapp:<build-id>
+...
+```
+
+The UI of the deployed business app can be accessed with the external IP adress `52.247.235.249` followed
+with the port of the `vote` service. To get the port of the `vote` service run:
+```shell
+kubectl get svc
+```
+Before pasting in a webbrowser `ip-address:port`, in your `vmss` add your port to the `inbound port` as before.
+You should then land on the UI.
