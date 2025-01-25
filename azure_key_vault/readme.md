@@ -342,3 +342,8 @@ Output:
 ```
 That is it.
 
+## Delete everything
+Now that we are done, let's delete everything
+```shell
+az group delete --name keyvault-demo
+```
